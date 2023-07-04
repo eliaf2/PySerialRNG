@@ -26,13 +26,14 @@ Download the git repository and unpack it in your project folder.
 1. In order to use this package, you need to have installed the following packages:
     - ```pyserial```
     - ```numpy```
+    - ```tqdm```
     - ```matplotlib```
 
     You can install them by using ```pip```:
     ```zsh
-    pip install pyserial numpy scipy matplotlib
+    pip install pyserial numpy tqdm matplotlib
     ```
-    (The package was tested with ```Python 3.9.16```, with ```pyserial 3.5```, ```numpy 1.21.5```, and ```matplotlib 3.6.2```)
+    (The package was tested with ```Python 3.9.16```, with ```pyserial 3.5```, ```numpy 1.21.5```, ```tqdm 4.64.1``` and ```matplotlib 3.6.2```)
 2. Add the following line to your code:
 ```python
 import PySerialRNG
@@ -45,6 +46,7 @@ The package can be used by calling the ```random_generator``` class, which start
   - ```num```: the number of bits to be returned.
   - ```window_size```: the window size used to calculate the moving avergare on the measurements. The default value is 1000.
   - ```reduction```: allows to take only every n-th measure, for example if ```reduction = 4```, the function converts only ```measures[::4]```; by default ```reduction = 1```.
+  - ```progress_bar```: if ```True```, a progress bar is shown. The default value is ```False```.
 - ```fft_test```: returns the FFT of the input signal. In order to have good result, it should be uniform.
   - ```num```: the number of measures; by default is $10^5$.
   - ```reduction```: allows to take only every n-th measure, for example if ```reduction = 4```, the function converts only ```measures[::4]```; by default ```reduction = 1```.
@@ -54,6 +56,7 @@ The package can be used by calling the ```random_generator``` class, which start
   - ```window_size```: the window size used to calculate the moving avergare on the measurements. The default value is 1000.
   - ```dtype```: the data type of the uinsigned int returned in the array. It must be 8, 16, 32 or 64. The default value is 16.
   - ```reduction```: allows to take only every n-th measure, for example if ```reduction = 4```, the function converts only ```measures[::4]```; by default ```reduction = 1```.
+  - ```progress_bar```: if ```True```, a progress bar is shown. The default value is ```False```.
 
 The ```random``` subclass of ```random_generator``` allows to obtain different number distributions, in particular it contains the following methods:
 - ```randint```: returns an array of integers uniformly distributed between `low` and `high`, given by the user.
@@ -66,7 +69,7 @@ The ```random``` subclass of ```random_generator``` allows to obtain different n
 import PySerialRNG as rg
 import numpy as np
 gen = rg.random('/dev/cu.usbmodem11101')
-data = gen(int(1e5), window_size=1000, reduction=4)
+data = gen(int(1e5), window_size=1000, reduction=4, progress_bar=True)
 print('Data acquired')
 gen.exit()
 ```
@@ -85,7 +88,7 @@ gen.exit()
 import PySerialRNG as rg
 import numpy as np
 gen = rg.random('/dev/cu.usbmodem11101')
-data = gen.get_uint(int(1e6), window_size=1000, dtype=32, reduction=4)
+data = gen.get_uint(int(1e6), window_size=1000, dtype=32, reduction=4, progress_bar=True)
 print('Data acquired')
 gen.exit()
 ```
@@ -95,9 +98,9 @@ gen.exit()
 import PySerialRNG as rg
 import numpy as np
 gen = rg.random('/dev/cu.usbmodem11101')
-x_randint = gen.randint(10, 1000, int(1e5), reduction=4)
-x_rand = gen.rand(int(1e5), reduction=4)
-x_norm = gen.normal(0, 0.5, int(1e5), reduction=4)
+x_randint = gen.randint(10, 1000, int(1e5), reduction=4, progress_bar=True)
+x_rand = gen.rand(int(1e5), reduction=4, progress_bar=True)
+x_norm = gen.normal(0, 0.5, int(1e5), reduction=4, progress_bar=True)
 print('Data acquired')
 gen.exit()
 ```

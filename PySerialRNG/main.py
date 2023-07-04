@@ -13,7 +13,7 @@ import numpy as np
 
 
 class SerialReader(threading.Thread):
-    #Inspired by http://forum.arduino.cc/index.php?topic=137635.msg1270996#msg1270996
+    # Inspired by http://forum.arduino.cc/index.php?topic=137635.msg1270996#msg1270996
     """ Defines a thread for reading and buffering serial data.
     By default, about 5MSamples are stored in the buffer.
     Data can be retrieved from the buffer by calling get(N)"""
@@ -161,7 +161,7 @@ class random_generator():
             return conversion_array_with_average(data_mis)
         bit_array = conversion_array(
             data_mis[::reduction], window_size=window_size, level=1)
-        
+
         # Check that bit_array is not empty or that it has all 0 or all 1, in which case relaunch the function, if the problem persists restart the device
         if self.counter_errors > 4:
             print('The number of iterations is too high. Check that the random number generator is connected correctly. \nThe device will be restarted.\n')
@@ -177,7 +177,8 @@ class random_generator():
 
         return bit_array
 
-    def __call__(self, size: int, window_size: int = 1000, reduction: int = 1) -> np.ndarray:
+    def __call__(self, size: int, window_size: int = 1000, reduction: int = 1, progress_bar: bool = False) -> np.ndarray:
+        from tqdm import tqdm
         '''Returns the array of the random bits of length `size`.
 
         Parameters
@@ -188,6 +189,8 @@ class random_generator():
             length of window of the moving average, by default 1000
         reduction : int, optional
             allows to take only every n-th measure, by default 1
+        progress_bar : bool, optional
+            if True, it shows the progress bar, by default False
 
         Returns
         -------
@@ -199,10 +202,20 @@ class random_generator():
         size_request_data = size * 100/6    # According to my tests only about 6% of the measures are converted in actual random bits due to the Von Neumann algorithm
         if size_request_data > 1e6:
             size_request_data = 1e6
-        while(count_length < size):
+
+        if progress_bar:
+            pbar = tqdm(total=size)
+
+        while count_length < size:
             tmp = self.get_data(int(size_request_data), window_size, reduction)
             count_length += len(tmp)
             data.append(tmp)
+            if progress_bar:
+                pbar.update(len(tmp))  # type: ignore
+
+        if progress_bar:
+            pbar.close()  # type: ignore
+
         data = np.concatenate((*data,))
         diff = int(len(data)-size)
         if diff == 0:
@@ -223,7 +236,7 @@ class random_generator():
         import matplotlib.pyplot as plt
         time_mis, data, rate_mis = self.thread.get(num, downsample=1)
 
-         # Check that bit_array is not empty or that it has all 0 or all 1, in which case relaunch the function, if the problem persists restart the device
+        # Check that bit_array is not empty or that it has all 0 or all 1, in which case relaunch the function, if the problem persists restart the device
         if self.counter_errors > 4:
             print('The number of iterations is too high. Check that the random number generator is connected correctly and restart the device.\n')
             self.thread.reset()
@@ -256,7 +269,7 @@ class random_generator():
         #             transparent=False, bbox_inches="tight")
         plt.show()
 
-    def get_uint(self, size: int, window_size: int = 1000, dtype: int = 16, reduction: int = 1) -> np.ndarray:
+    def get_uint(self, size: int, window_size: int = 1000, dtype: int = 16, reduction: int = 1, progress_bar: bool = False) -> np.ndarray:
         '''Returns an array of uint numbers of length `size`.
 
         Parameters
@@ -269,6 +282,8 @@ class random_generator():
             type of uint, it must be 8, 16, 32 or 64, by default 16
         reduction : int, optional
             allows to take only every n-th measure, by default 1
+        progress_bar : bool, optional
+            if True, it shows the progress bar, by default False
 
         Returns
         -------
@@ -280,7 +295,8 @@ class random_generator():
             raise ValueError(
                 'dtype must be 8, 16, 32 or 64')
         size = int(size)*dtype
-        binary_array = self.__call__(size, window_size=window_size, reduction=reduction)
+        binary_array = self.__call__(
+            size, window_size=window_size, reduction=reduction, progress_bar=progress_bar)
         # print('Done acquisition')
         binary_array = binary_array.reshape(-1)
         try:
@@ -315,7 +331,7 @@ class random(random_generator):
     def __init__(self, port: str):
         super().__init__(port)
 
-    def randint(self, low: int, high: int, size: int, accuracy: int = 16, window_size: int = 1000, reduction: int = 1) -> np.ndarray:
+    def randint(self, low: int, high: int, size: int, accuracy: int = 16, window_size: int = 1000, reduction: int = 1, progress_bar: bool = False) -> np.ndarray:
         '''Return random integers from `low` (inclusive) to `high` (inclusive).
 
         Parameters
@@ -332,16 +348,19 @@ class random(random_generator):
             length of window of the mobile_average, by default 1000
         reduction : int, optional
             allows to take only every n-th measure, by default 1
+        progress_bar : bool, optional
+            if True, it shows the progress bar, by default False
 
         Returns
         -------
         np.ndarray
             an array of random integers of length `size` between `low` and `high`
         '''
-        data = self.get_uint(size, window_size, accuracy, reduction)
+        data = self.get_uint(size, window_size, accuracy,
+                             reduction, progress_bar)
         return np.interp(data, (0, 2**accuracy-1), (low, high)).astype(int)
 
-    def rand(self, size: int, accuracy: int = 16, window_size: int = 1000, reduction: int = 1) -> np.ndarray:
+    def rand(self, size: int, accuracy: int = 16, window_size: int = 1000, reduction: int = 1, progress_bar: bool = False) -> np.ndarray:
         '''Create an array of the given shape and populate it with random 
         samples from a uniform distribution over [0, 1).
 
@@ -355,16 +374,19 @@ class random(random_generator):
             length of window of the mobile_average, by default 1000
         reduction : int, optional
             allows to take only every n-th measure, by default 1
+        progress_bar : bool, optional
+            if True, it shows the progress bar, by default False
 
         Returns
         -------
         np.ndarray
             an array of random floats of length `size` between 0 and 1 uniformly distributed
         '''
-        data = self.get_uint(size, window_size, dtype=accuracy, reduction=reduction)
+        data = self.get_uint(
+            size, window_size, dtype=accuracy, reduction=reduction)
         return data/(2**accuracy)
 
-    def normal(self, loc: float, scale: float, size: int, accuracy: int = 16, window_size: int = 1000, reduction: int = 1) -> np.ndarray:
+    def normal(self, loc: float, scale: float, size: int, accuracy: int = 16, window_size: int = 1000, reduction: int = 1, progress_bar: bool = False) -> np.ndarray:
         '''
         Draw random samples in a normal (Gaussian) distribution. It gets two 
         uniform distributions and convert them in a normal distribution of mean `loc` 
@@ -382,14 +404,16 @@ class random(random_generator):
             length of window of the mobile_average, by default 1000
         reduction : int, optional
             allows to take only every n-th measure, by default 1
+        progress_bar : bool, optional
+            if True, it shows the progress bar, by default False
 
         Returns
         -------
         np.ndarray
             an array of random floats of length `size`
         '''
-        U1 = self.rand(size, accuracy, window_size, reduction)
-        U2 = self.rand(size, accuracy, window_size, reduction)
+        U1 = self.rand(size, accuracy, window_size, reduction, progress_bar)
+        U2 = self.rand(size, accuracy, window_size, reduction, progress_bar)
         R = np.sqrt(-2 * (scale**2) * np.log(1-U1))  # type: ignore
         Theta = 2 * np.pi * U2  # type: ignore
         X = R * np.cos(Theta) + loc
