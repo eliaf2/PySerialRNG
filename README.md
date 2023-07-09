@@ -1,6 +1,6 @@
 <!-- omit in toc -->
 # PySerialRNG: Python Interface for Serial device Random Number Generators
-This package allows to use a serial device as a random number generator. In particular, it compares an array of measurements, sent from the serial port, with their moving average and from them it generates a numpy array of 0 and 1, which is then converted into unsigned integer. By using some algorithms, these are then converted into different distributions. 
+This package allows to use a serial device as a random number generator. In particular, it compares an array of measurements, sent from the serial port, with their moving average and from them it generates a numpy array of 0s and 1s, which is then converted into unsigned integers. By using some algorithms, these are then converted into different distributions. 
 This library was tested with an Arduino Due, connected to a white noise generator.
 
 - [Setup](#setup)
@@ -19,8 +19,8 @@ This library was tested with an Arduino Due, connected to a white noise generato
 Download the git repository and unpack it in your project folder.
 
 ### Setup Serial Communication
-1. A reset system should be implemented in the device in this way to be properly compatible with the package: if it receives the 'r' character, it will restart.
-2. Connect the device to your computer.
+1. A reset system should be implemented in the device in the following way to be properly compatible with the package: if it receives the 'r' character, it will restart.
+2. Connect the device to your computer and find the adress of the port.
 
 ### Setup Python
 1. In order to use this package, you need to have installed the following packages:
@@ -33,7 +33,7 @@ Download the git repository and unpack it in your project folder.
     ```zsh
     pip install pyserial numpy tqdm matplotlib
     ```
-    (The package was tested with ```Python 3.9.16```, with ```pyserial 3.5```, ```numpy 1.21.5```, ```tqdm 4.64.1``` and ```matplotlib 3.6.2```)
+    (The package was tested with ```Python 3.9.16``` and ```pyserial 3.5```, ```numpy 1.21.5```, ```tqdm 4.64.1``` and ```matplotlib 3.6.2```)
 2. Add the following line to your code:
 ```python
 import PySerialRNG
@@ -47,7 +47,7 @@ The package can be used by calling the ```random_generator``` class, which start
   - ```window_size```: the window size used to calculate the moving avergare on the measurements. The default value is 1000.
   - ```reduction```: allows to take only every n-th measure, for example if ```reduction = 4```, the function converts only ```measures[::4]```; by default ```reduction = 1```.
   - ```progress_bar```: if ```True```, a progress bar is shown. The default value is ```False```.
-- ```fft_test```: returns the FFT of the input signal. In order to have good result, it should be uniform.
+- ```fft_test```: returns the FFT of the input signal. In order to have good results, it should be uniform. This method has the following parameters:
   - ```num```: the number of measures; by default is $10^5$.
   - ```reduction```: allows to take only every n-th measure, for example if ```reduction = 4```, the function converts only ```measures[::4]```; by default ```reduction = 1```.
 - ```exit```: closes the connection with the device. Must be called at the end of the program.
@@ -59,7 +59,7 @@ The package can be used by calling the ```random_generator``` class, which start
   - ```progress_bar```: if ```True```, a progress bar is shown. The default value is ```False```.
 
 The ```random``` subclass of ```random_generator``` allows to obtain different number distributions, in particular it contains the following methods:
-- ```randint```: returns an array of integers uniformly distributed between `low` and `high`, given by the user.
+- ```randint```: returns an array of integers uniformly distributed between `low` and `high`, both included and given by the user.
 - ```rand```: returns an array of floats uniformly distributed in [0,1).
 - ```normal```: returns an array of floats in a normal distribution of mean `loc` and standard deviation `scale`.
 
@@ -88,7 +88,8 @@ gen.exit()
 import PySerialRNG as rg
 import numpy as np
 gen = rg.random('/dev/cu.usbmodem11101')
-data = gen.get_uint(int(1e6), window_size=1000, dtype=32, reduction=4, progress_bar=True)
+data = gen.get_uint(int(1e6), window_size=1000, dtype=32,
+                    reduction=4, progress_bar=True)
 print('Data acquired')
 gen.exit()
 ```
