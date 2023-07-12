@@ -383,7 +383,7 @@ class random(random_generator):
             an array of random floats of length `size` between 0 and 1 uniformly distributed
         '''
         data = self.get_uint(
-            size, window_size, dtype=accuracy, reduction=reduction)
+            size, window_size, dtype=accuracy, reduction=reduction, progress_bar=progress_bar)
         return data/(2**accuracy)
 
     def normal(self, loc: float, scale: float, size: int, accuracy: int = 16, window_size: int = 1000, reduction: int = 1, progress_bar: bool = False) -> np.ndarray:
